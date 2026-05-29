@@ -33,11 +33,13 @@ class TestSearchScraper:
         assert hasattr(scraper, "search")
         assert callable(scraper.search)
 
-    async def test_returns_empty_on_error(self):
+    @pytest.mark.asyncio
+    async def test_search_returns_empty_on_error(self):
         scraper = SearchScraper()
-        with patch.object(scraper, "fetch", side_effect=Exception("network error")):
-            results = await scraper.search("test query")
-            assert results == []
+        scraper.sources = [{"search_url": "https://example.com/search?q={keyword}"}]
+        with patch.object(scraper, "fetch", new_callable=AsyncMock, side_effect=Exception("network error")):
+            result = await scraper.search("test query")
+            assert result == []
 
 
 class TestLyricsScraper:
@@ -50,8 +52,26 @@ class TestLyricsScraper:
         assert hasattr(scraper, "search_lyrics")
         assert callable(scraper.search_lyrics)
 
-    async def test_returns_empty_on_error(self):
+    @pytest.mark.asyncio
+    async def test_search_lyrics_returns_empty_on_error(self):
         scraper = LyricsScraper()
-        with patch.object(scraper, "fetch", side_effect=Exception("network error")):
-            results = await scraper.search_lyrics("title", "artist")
-            assert results == []
+        scraper.sources = [{"search_url": "https://example.com/search?q={keyword}", "name": "test"}]
+        with patch.object(scraper, "fetch", new_callable=AsyncMock, side_effect=Exception("network error")):
+            result = await scraper.search_lyrics("title", "artist")
+            assert result == []
+
+
+class TestCoverScraper:
+    def test_cover_scraper_inherits_base(self):
+        assert issubclass(CoverScraper, BaseScraper)
+
+    def test_cover_scraper_has_get_cover(self):
+        assert hasattr(CoverScraper, "get_cover")
+
+    @pytest.mark.asyncio
+    async def test_get_cover_returns_none_on_error(self):
+        scraper = CoverScraper()
+        scraper.sources = [{"search_url": "https://example.com/search?q={keyword}"}]
+        with patch.object(scraper, "fetch", new_callable=AsyncMock, side_effect=Exception("network error")):
+            result = await scraper.get_cover(album="Test Album", artist="Test Artist")
+            assert result is None

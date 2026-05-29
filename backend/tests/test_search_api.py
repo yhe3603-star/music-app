@@ -38,6 +38,20 @@ def test_search_no_results(client: TestClient):
     assert data["source"] == "mixed"
 
 
+def test_search_online_endpoint(client):
+    mock_results = [
+        {"title": "Online Song", "artist": "Online Artist", "source": "online", "source_id": "123"}
+    ]
+    with patch("app.routers.search.SearchScraper") as MockScraper:
+        instance = MockScraper.return_value
+        instance.search = AsyncMock(return_value=mock_results)
+        response = client.get("/api/search/online?keyword=test")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["source"] == "online"
+        assert len(data["results"]) == 1
+
+
 def test_search_online(client: TestClient):
     online_results = [
         {

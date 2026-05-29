@@ -1,21 +1,5 @@
 from app.scrapers.base import BaseScraper
 
-class SearchResult:
-    def __init__(self, title, artist=None, album=None, duration=None, source_id=None, cover_url=None):
-        self.title = title
-        self.artist = artist
-        self.album = album
-        self.duration = duration
-        self.source_id = source_id
-        self.cover_url = cover_url
-
-    def to_dict(self):
-        return {
-            "title": self.title, "artist": self.artist, "album": self.album,
-            "duration": self.duration, "source_id": self.source_id,
-            "cover_url": self.cover_url, "source": "online",
-        }
-
 class SearchScraper(BaseScraper):
     def __init__(self):
         super().__init__()

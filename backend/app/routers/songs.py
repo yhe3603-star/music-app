@@ -65,10 +65,16 @@ def stream_song(song_id: int, request: Request, db: Session = Depends(get_db)):
 
     range_header = request.headers.get("range")
     if range_header:
-        range_spec = range_header.replace("bytes=", "")
-        start, end = range_spec.split("-")
-        start = int(start)
-        end = int(end) if end else file_size - 1
+        try:
+            range_spec = range_header.replace("bytes=", "").strip()
+            start_str, end_str = range_spec.split("-")
+            start = int(start_str)
+            end = int(end_str) if end_str else file_size - 1
+
+            if start >= file_size or start > end or start < 0:
+                raise HTTPException(status_code=416, detail="Range not satisfiable")
+        except (ValueError, IndexError):
+            raise HTTPException(status_code=416, detail="Invalid Range header")
         content_length = end - start + 1
 
         def iter_file():
@@ -99,8 +105,8 @@ def stream_song(song_id: int, request: Request, db: Session = Depends(get_db)):
 
 @router.get("/{song_id}/lyrics")
 def get_lyrics(song_id: int, db: Session = Depends(get_db)):
-    from app.models.lyrics import Lyrics
-    lyrics = db.query(Lyrics).filter(Lyrics.song_id == song_id).first()
+    service = MusicService(db)
+    lyrics = service.get_lyrics(song_id)
     if not lyrics:
         raise HTTPException(status_code=404, detail="Lyrics not found")
     return {"song_id": song_id, "content": lyrics.content, "source": lyrics.source}

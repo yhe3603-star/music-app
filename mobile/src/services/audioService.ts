@@ -6,7 +6,7 @@ import { Song } from '../types';
 export async function setupPlayer() {
   try {
     await TrackPlayer.setupPlayer({
-      maxCacheSize: 1024 * 50, // 50MB cache
+      maxCacheSize: 1024 * 50,
     });
 
     await TrackPlayer.updateOptions({
@@ -24,7 +24,7 @@ export async function setupPlayer() {
         Capability.SkipToNext,
         Capability.SkipToPrevious,
       ],
-      progressUpdateEventInterval: 1, // 1 second
+      progressUpdateEventInterval: 1,
     });
 
     return true;
@@ -37,8 +37,7 @@ export async function setupPlayer() {
 export async function playSong(song: Song) {
   await TrackPlayer.reset();
 
-  // Check for local download first
-  let url = MusicApi.getStreamUrl(song.id);
+  let url = await MusicApi.getStreamUrl(song.id);
   try {
     const localPath = await DownloadService.getLocalPath(song.id);
     if (localPath) {
@@ -55,7 +54,7 @@ export async function playSong(song: Song) {
     artist: song.artist || '未知歌手',
     album: song.album || '',
     artwork: song.cover_url || undefined,
-    duration: song.duration ? song.duration / 1000 : undefined, // convert ms to seconds
+    duration: song.duration ? song.duration / 1000 : undefined,
   };
 
   await TrackPlayer.add(track);
@@ -65,15 +64,27 @@ export async function playSong(song: Song) {
 export async function playQueue(songs: Song[], startIndex: number = 0) {
   await TrackPlayer.reset();
 
-  const tracks = songs.map((song) => ({
-    id: String(song.id),
-    url: MusicApi.getStreamUrl(song.id),
-    title: song.title,
-    artist: song.artist || '未知歌手',
-    album: song.album || '',
-    artwork: song.cover_url || undefined,
-    duration: song.duration ? song.duration / 1000 : undefined,
-  }));
+  const tracks = [];
+  for (const song of songs) {
+    let url = await MusicApi.getStreamUrl(song.id);
+    try {
+      const localPath = await DownloadService.getLocalPath(song.id);
+      if (localPath) {
+        url = `file://${localPath}`;
+      }
+    } catch {
+      // fall back to streaming
+    }
+    tracks.push({
+      id: String(song.id),
+      url,
+      title: song.title,
+      artist: song.artist || '未知歌手',
+      album: song.album || '',
+      artwork: song.cover_url || undefined,
+      duration: song.duration ? song.duration / 1000 : undefined,
+    });
+  }
 
   await TrackPlayer.add(tracks);
 

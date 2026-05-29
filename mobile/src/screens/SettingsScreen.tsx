@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearApiBaseCache } from '../services/api';
 
 const SERVER_URL_KEY = 'server_url';
 const DEFAULT_SERVER = 'http://10.0.2.2:8000';
@@ -8,9 +9,16 @@ const DEFAULT_SERVER = 'http://10.0.2.2:8000';
 export default function SettingsScreen() {
   const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER);
 
+  useEffect(() => {
+    AsyncStorage.getItem(SERVER_URL_KEY).then((stored) => {
+      if (stored) setServerUrl(stored);
+    });
+  }, []);
+
   async function handleSave() {
     try {
       await AsyncStorage.setItem(SERVER_URL_KEY, serverUrl);
+      clearApiBaseCache();
       Alert.alert('成功', '服务器地址已保存');
     } catch {
       Alert.alert('错误', '保存失败');

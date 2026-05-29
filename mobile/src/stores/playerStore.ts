@@ -1,4 +1,3 @@
-import React, { createContext, useContext } from 'react';
 import { create } from 'zustand';
 import { Song } from '../types';
 
@@ -47,9 +46,3 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
   },
 }));
-
-// React context provider (for compatibility)
-const PlayerContext = createContext(null);
-export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return React.createElement(PlayerContext.Provider, { value: null }, children);
-};

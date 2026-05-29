@@ -2,18 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import TrackPlayer from 'react-native-track-player';
 import AppNavigator from './src/navigation/AppNavigator';
-import { PlayerProvider } from './src/stores/playerStore';
 import { setupPlayer } from './src/services/audioService';
 import PlaybackService from './src/services/PlaybackService';
+import { usePlaylistStore } from './src/stores/playlistStore';
 
-// Register playback service for background/notification controls
 TrackPlayer.registerPlaybackService(() => PlaybackService);
 
 const App = () => {
   const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const loadFavorites = usePlaylistStore((state) => state.loadFavorites);
 
   useEffect(() => {
     async function init() {
+      await loadFavorites();
       const ready = await setupPlayer();
       setIsPlayerReady(ready);
     }
@@ -21,15 +22,13 @@ const App = () => {
   }, []);
 
   if (!isPlayerReady) {
-    return null; // or a loading screen
+    return null;
   }
 
   return (
-    <PlayerProvider>
-      <NavigationContainer>
-        <AppNavigator />
-      </NavigationContainer>
-    </PlayerProvider>
+    <NavigationContainer>
+      <AppNavigator />
+    </NavigationContainer>
   );
 };
 

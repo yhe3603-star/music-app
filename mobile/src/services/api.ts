@@ -1,9 +1,29 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Song, SongListResponse, SearchResult, Playlist, Lyrics } from '../types';
 
-const API_BASE = 'http://10.0.2.2:8000';
+const DEFAULT_API_BASE = 'http://10.0.2.2:8000';
+const SERVER_URL_KEY = 'server_url';
+
+let _apiBase: string | null = null;
+
+async function getApiBase(): Promise<string> {
+  if (_apiBase) return _apiBase;
+  try {
+    const stored = await AsyncStorage.getItem(SERVER_URL_KEY);
+    _apiBase = stored || DEFAULT_API_BASE;
+  } catch {
+    _apiBase = DEFAULT_API_BASE;
+  }
+  return _apiBase;
+}
+
+export function clearApiBaseCache() {
+  _apiBase = null;
+}
 
 async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`);
+  const base = await getApiBase();
+  const response = await fetch(`${base}${path}`);
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
   }
@@ -11,7 +31,8 @@ async function request<T>(path: string): Promise<T> {
 }
 
 async function post<T>(path: string, body: any): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const base = await getApiBase();
+  const response = await fetch(`${base}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -23,7 +44,8 @@ async function post<T>(path: string, body: any): Promise<T> {
 }
 
 async function del<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, { method: 'DELETE' });
+  const base = await getApiBase();
+  const response = await fetch(`${base}${path}`, { method: 'DELETE' });
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
   }
@@ -73,7 +95,12 @@ export const MusicApi = {
     return request(`/api/recommend/${songId}`);
   },
 
-  getStreamUrl(songId: number): string {
-    return `${API_BASE}/api/songs/${songId}/stream`;
+  async getStreamUrl(songId: number): Promise<string> {
+    const base = await getApiBase();
+    return `${base}/api/songs/${songId}/stream`;
+  },
+
+  async getApiBaseUrl(): Promise<string> {
+    return getApiBase();
   },
 };

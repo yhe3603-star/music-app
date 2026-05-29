@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, Text, Alert, StyleSheet } from 'react-native';
 import { DownloadService } from '../services/downloadService';
+import { MusicApi } from '../services/api';
 import { Song } from '../types';
 
 interface Props {
   song: Song;
-  serverUrl?: string;
 }
 
-export default function DownloadButton({ song, serverUrl = 'http://10.0.2.2:8000' }: Props) {
+export default function DownloadButton({ song }: Props) {
   const [downloaded, setDownloaded] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -38,6 +38,7 @@ export default function DownloadButton({ song, serverUrl = 'http://10.0.2.2:8000
 
     setDownloading(true);
     try {
+      const serverUrl = await MusicApi.getApiBaseUrl();
       await DownloadService.downloadSong(song, serverUrl);
       setDownloaded(true);
       Alert.alert('下载完成', `${song.title} 已保存到本地`);

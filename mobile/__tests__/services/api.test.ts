@@ -1,4 +1,12 @@
-import { MusicApi } from '../../src/services/api';
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn().mockResolvedValue(null),
+    setItem: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
+import { MusicApi, clearApiBaseCache } from '../../src/services/api';
 
 global.fetch = jest.fn();
 
@@ -7,6 +15,7 @@ const API_BASE = 'http://10.0.2.2:8000';
 describe('MusicApi', () => {
   beforeEach(() => {
     (fetch as jest.Mock).mockClear();
+    clearApiBaseCache();
   });
 
   it('fetches songs list', async () => {
@@ -57,5 +66,10 @@ describe('MusicApi', () => {
   it('handles fetch error', async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 500 });
     await expect(MusicApi.getSongs()).rejects.toThrow();
+  });
+
+  it('returns stream url', async () => {
+    const url = await MusicApi.getStreamUrl(42);
+    expect(url).toBe(`${API_BASE}/api/songs/42/stream`);
   });
 });

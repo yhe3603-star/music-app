@@ -47,7 +47,7 @@ export const DownloadService = {
     await this.ensureDir();
 
     const ext = '.mp3';
-    const filename = `${song.id}_${song.title.replace(/[^a-zA-Z0-9一-鿿]/g, '_')}${ext}`;
+    const filename = `${song.id}_${song.title.replace(/[\/\\:*?"<>|]/g, '_')}${ext}`;
     const localPath = `${DOWNLOAD_DIR}/${filename}`;
 
     const downloadUrl = `${serverUrl}/api/songs/${song.id}/download`;

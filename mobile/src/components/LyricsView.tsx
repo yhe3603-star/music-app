@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
 interface Props {
@@ -21,6 +21,34 @@ function parseLRC(lrc: string): { time: number; text: string }[] {
 }
 
 export default function LyricsView({ lyrics, currentTime = 0 }: Props) {
+  const scrollRef = useRef<ScrollView>(null);
+  const lineRefs = useRef<View[]>([]);
+
+  const parsed = useMemo(() => {
+    if (!lyrics) return [];
+    return parseLRC(lyrics);
+  }, [lyrics]);
+
+  const currentIndex = useMemo(() => {
+    if (parsed.length === 0) return -1;
+    return parsed.findIndex((l, i) => {
+      const next = parsed[i + 1];
+      return currentTime >= l.time && (!next || currentTime < next.time);
+    });
+  }, [parsed, currentTime]);
+
+  useEffect(() => {
+    if (currentIndex >= 0 && lineRefs.current[currentIndex]) {
+      lineRefs.current[currentIndex]?.measureLayout(
+        scrollRef.current as any,
+        (_x, y) => {
+          scrollRef.current?.scrollTo({ y: Math.max(0, y - 150), animated: true });
+        },
+        () => {},
+      );
+    }
+  }, [currentIndex]);
+
   if (!lyrics) {
     return (
       <View style={styles.container}>
@@ -29,7 +57,6 @@ export default function LyricsView({ lyrics, currentTime = 0 }: Props) {
     );
   }
 
-  const parsed = parseLRC(lyrics);
   if (parsed.length === 0) {
     return (
       <View style={styles.container}>
@@ -38,20 +65,16 @@ export default function LyricsView({ lyrics, currentTime = 0 }: Props) {
     );
   }
 
-  const currentIndex = parsed.findIndex((l, i) => {
-    const next = parsed[i + 1];
-    return currentTime >= l.time && (!next || currentTime < next.time);
-  });
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView ref={scrollRef} style={styles.container} contentContainerStyle={styles.content}>
       {parsed.map((line, index) => (
-        <Text
-          key={index}
-          style={[styles.lyricLine, index === currentIndex && styles.activeLyric]}
-        >
-          {line.text || '...'}
-        </Text>
+        <View key={index} ref={(ref) => { if (ref) lineRefs.current[index] = ref; }}>
+          <Text
+            style={[styles.lyricLine, index === currentIndex && styles.activeLyric]}
+          >
+            {line.text || '...'}
+          </Text>
+        </View>
       ))}
     </ScrollView>
   );

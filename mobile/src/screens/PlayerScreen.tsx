@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, LayoutChangeEvent } from 'react-native';
 import { MusicApi } from '../services/api';
 import { usePlayerStore } from '../stores/playerStore';
 import { usePlaylistStore } from '../stores/playlistStore';
@@ -13,6 +13,7 @@ export default function PlayerScreen() {
   const { isFavorite, toggleFavorite } = usePlaylistStore();
   const [lyrics, setLyrics] = useState<string | null>(null);
   const { position, duration } = useProgress(1000);
+  const [progressBarWidth, setProgressBarWidth] = useState(0);
 
   useEffect(() => {
     if (currentSong) {
@@ -47,10 +48,17 @@ export default function PlayerScreen() {
     storePlayPrevious();
   }
 
-  function handleSeek(ratio: number) {
-    const newPos = ratio * duration;
-    seekTo(newPos);
+  function handleSeek(event: any) {
+    const { locationX } = event.nativeEvent;
+    if (progressBarWidth > 0 && duration > 0) {
+      const ratio = Math.max(0, Math.min(1, locationX / progressBarWidth));
+      seekTo(ratio * duration);
+    }
   }
+
+  const onProgressLayout = useCallback((event: LayoutChangeEvent) => {
+    setProgressBarWidth(event.nativeEvent.layout.width);
+  }, []);
 
   if (!currentSong) {
     return (
@@ -88,11 +96,8 @@ export default function PlayerScreen() {
 
       <TouchableOpacity
         style={styles.progressSection}
-        onPress={(e) => {
-          const { locationX } = e.nativeEvent;
-          const width = 300; // approximate
-          handleSeek(locationX / width);
-        }}
+        onLayout={onProgressLayout}
+        onPress={handleSeek}
       >
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />

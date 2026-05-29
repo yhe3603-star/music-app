@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import songs, playlists
+from app.routers import songs, playlists, search, recommend
 import app.models  # noqa: F401
 
 
@@ -23,3 +23,5 @@ app.add_middleware(
 
 app.include_router(songs.router)
 app.include_router(playlists.router)
+app.include_router(search.router)
+app.include_router(recommend.router)

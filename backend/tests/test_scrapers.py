@@ -1,3 +1,4 @@
+import json
 import pytest
 from unittest.mock import AsyncMock, patch
 from app.scrapers.base import BaseScraper
@@ -42,6 +43,35 @@ class TestSearchScraper:
             assert result == []
 
 
+class TestSearchScraperParsing:
+    def test_parse_musicbrainz_results(self):
+        scraper = SearchScraper()
+        content = json.dumps({
+            "recordings": [{
+                "title": "Bohemian Rhapsody",
+                "artist-credit": [{"name": "Queen"}],
+                "releases": [{"title": "A Night at the Opera", "id": "release-id-123"}],
+                "length": 354000,
+                "id": "recording-id-456",
+            }]
+        })
+        results = scraper.parse(content)
+        assert len(results) == 1
+        assert results[0]["title"] == "Bohemian Rhapsody"
+        assert results[0]["artist"] == "Queen"
+        assert results[0]["album"] == "A Night at the Opera"
+        assert results[0]["duration"] == 354000
+        assert "coverartarchive.org" in results[0]["cover_url"]
+
+    def test_parse_empty_results(self):
+        scraper = SearchScraper()
+        assert scraper.parse('{"recordings": []}') == []
+
+    def test_parse_invalid_json(self):
+        scraper = SearchScraper()
+        assert scraper.parse("not json") == []
+
+
 class TestLyricsScraper:
     def test_inherits_base_scraper(self):
         scraper = LyricsScraper()
@@ -61,6 +91,27 @@ class TestLyricsScraper:
             assert result == []
 
 
+class TestLyricsScraperParsing:
+    def test_parse_lrclib_results(self):
+        scraper = LyricsScraper()
+        content = json.dumps([{
+            "syncedLyrics": "[00:01.00]Hello world\n[00:05.00]Test lyrics",
+            "plainLyrics": "Hello world\nTest lyrics",
+        }])
+        result = scraper.parse(content)
+        assert result is not None
+        assert "[00:01.00]" in result["content"]
+        assert result["source"] == "lrclib"
+
+    def test_parse_empty_lyrics(self):
+        scraper = LyricsScraper()
+        assert scraper.parse("[]") is None
+
+    def test_parse_invalid_json(self):
+        scraper = LyricsScraper()
+        assert scraper.parse("not json") is None
+
+
 class TestCoverScraper:
     def test_cover_scraper_inherits_base(self):
         assert issubclass(CoverScraper, BaseScraper)
@@ -75,3 +126,16 @@ class TestCoverScraper:
         with patch.object(scraper, "fetch", new_callable=AsyncMock, side_effect=Exception("network error")):
             result = await scraper.get_cover(album="Test Album", artist="Test Artist")
             assert result is None
+
+
+class TestCoverScraperParsing:
+    def test_parse_cover_art_archive(self):
+        scraper = CoverScraper()
+        content = json.dumps({"releases": [{"id": "abc-123"}]})
+        result = scraper.parse(content)
+        assert result is not None
+        assert result == "https://coverartarchive.org/release/abc-123/front-250"
+
+    def test_parse_no_releases(self):
+        scraper = CoverScraper()
+        assert scraper.parse('{"releases": []}') is None

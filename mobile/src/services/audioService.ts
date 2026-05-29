@@ -1,5 +1,6 @@
 import TrackPlayer, { Capability, usePlaybackState, useProgress, useActiveTrack } from 'react-native-track-player';
 import { MusicApi } from './api';
+import { DownloadService } from './downloadService';
 import { Song } from '../types';
 
 export async function setupPlayer() {
@@ -36,9 +37,20 @@ export async function setupPlayer() {
 export async function playSong(song: Song) {
   await TrackPlayer.reset();
 
+  // Check for local download first
+  let url = MusicApi.getStreamUrl(song.id);
+  try {
+    const localPath = await DownloadService.getLocalPath(song.id);
+    if (localPath) {
+      url = `file://${localPath}`;
+    }
+  } catch {
+    // fall back to streaming
+  }
+
   const track = {
     id: String(song.id),
-    url: MusicApi.getStreamUrl(song.id),
+    url,
     title: song.title,
     artist: song.artist || '未知歌手',
     album: song.album || '',

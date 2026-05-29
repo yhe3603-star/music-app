@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Song } from '../types';
+import DownloadButton from './DownloadButton';
 
 interface Props {
   song: Song;
@@ -32,6 +33,7 @@ export default function SongItem({ song, onPress, onLongPress, isPlaying }: Prop
       <Text style={styles.duration}>
         {song.duration ? formatDuration(song.duration) : ''}
       </Text>
+      <DownloadButton song={song} />
     </TouchableOpacity>
   );
 }

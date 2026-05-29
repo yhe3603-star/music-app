@@ -1,15 +1,29 @@
+# Python
 __pycache__/
 *.py[cod]
-*.pyo
-.env
-.venv/
-venv/
-node_modules/
-*.db
-*.sqlite3
+*.egg-info/
 dist/
 build/
-.coverage
-htmlcov/
-.pytest_cache/
-.mypy_cache/
+*.egg
+backend/venv/
+backend/storage/
+backend/music.db
+backend/.env
+
+# Node
+node_modules/
+mobile/.expo/
+mobile/android/
+mobile/ios/
+*.tgz
+.mobile/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -3,19 +3,22 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { MusicApi } from '../services/api';
 import { usePlayerStore } from '../stores/playerStore';
 import { usePlaylistStore } from '../stores/playlistStore';
+import { playSong, pausePlayback, resumePlayback, seekTo, useProgress } from '../services/audioService';
 import LyricsView from '../components/LyricsView';
-import { Lyrics } from '../types';
 
 export default function PlayerScreen() {
   const {
-    currentSong, isPlaying, position, duration,
-    togglePlay, playNext, playPrevious,
+    currentSong, isPlaying, togglePlay, playNext: storePlayNext, playPrevious: storePlayPrevious,
   } = usePlayerStore();
   const { isFavorite, toggleFavorite } = usePlaylistStore();
   const [lyrics, setLyrics] = useState<string | null>(null);
+  const { position, duration } = useProgress(1000);
 
   useEffect(() => {
-    if (currentSong) { loadLyrics(currentSong.id); }
+    if (currentSong) {
+      loadLyrics(currentSong.id);
+      playSong(currentSong);
+    }
   }, [currentSong?.id]);
 
   async function loadLyrics(songId: number) {
@@ -27,6 +30,28 @@ export default function PlayerScreen() {
     }
   }
 
+  function handleTogglePlay() {
+    togglePlay();
+    if (isPlaying) {
+      pausePlayback();
+    } else {
+      resumePlayback();
+    }
+  }
+
+  function handleNext() {
+    storePlayNext();
+  }
+
+  function handlePrevious() {
+    storePlayPrevious();
+  }
+
+  function handleSeek(ratio: number) {
+    const newPos = ratio * duration;
+    seekTo(newPos);
+  }
+
   if (!currentSong) {
     return (
       <View style={styles.container}>
@@ -36,6 +61,7 @@ export default function PlayerScreen() {
   }
 
   const favorite = isFavorite(currentSong.id);
+  const progressPercent = duration > 0 ? (position / duration) * 100 : 0;
 
   return (
     <View style={styles.container}>
@@ -60,30 +86,39 @@ export default function PlayerScreen() {
         <Text style={styles.artist} numberOfLines={1}>{currentSong.artist || '未知歌手'}</Text>
       </View>
 
-      <View style={styles.progressSection}>
+      <TouchableOpacity
+        style={styles.progressSection}
+        onPress={(e) => {
+          const { locationX } = e.nativeEvent;
+          const width = 300; // approximate
+          handleSeek(locationX / width);
+        }}
+      >
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: duration > 0 ? `${(position / duration) * 100}%` : '0%' }]} />
+          <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
         </View>
         <View style={styles.timeRow}>
           <Text style={styles.time}>{formatTime(position)}</Text>
           <Text style={styles.time}>{formatTime(duration)}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       <View style={styles.controls}>
         <TouchableOpacity onPress={() => toggleFavorite(currentSong.id)}>
           <Text style={styles.controlBtn}>{favorite ? '❤️' : '🤍'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={playPrevious}>
+        <TouchableOpacity onPress={handlePrevious}>
           <Text style={styles.controlBtn}>⏮</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={togglePlay} style={styles.playBtn}>
+        <TouchableOpacity onPress={handleTogglePlay} style={styles.playBtn}>
           <Text style={styles.playBtnText}>{isPlaying ? '⏸' : '▶'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={playNext}>
+        <TouchableOpacity onPress={handleNext}>
           <Text style={styles.controlBtn}>⏭</Text>
         </TouchableOpacity>
-        <Text style={styles.controlBtn}>🔀</Text>
+        <TouchableOpacity onPress={() => {}}>
+          <Text style={styles.controlBtn}>🔀</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

@@ -1,10 +1,20 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { usePlayerStore } from '../stores/playerStore';
+import { pausePlayback, resumePlayback } from '../services/audioService';
 
 export default function MiniPlayer() {
   const { currentSong, isPlaying, togglePlay } = usePlayerStore();
   if (!currentSong) return null;
+
+  function handleTogglePlay() {
+    togglePlay();
+    if (isPlaying) {
+      pausePlayback();
+    } else {
+      resumePlayback();
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -19,7 +29,7 @@ export default function MiniPlayer() {
           {currentSong.artist || '未知歌手'}
         </Text>
       </View>
-      <TouchableOpacity onPress={togglePlay} style={styles.button}>
+      <TouchableOpacity onPress={handleTogglePlay} style={styles.button}>
         <Text style={styles.buttonText}>{isPlaying ? '⏸' : '▶'}</Text>
       </TouchableOpacity>
     </View>

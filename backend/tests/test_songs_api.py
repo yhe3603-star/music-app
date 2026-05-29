@@ -106,6 +106,25 @@ def test_stream_song(client: TestClient):
     assert resp.headers["content-type"] == "audio/mpeg"
 
 
+def test_download_song(client: TestClient):
+    file_content = b"fake audio data for download"
+    create_resp = client.post(
+        "/api/songs/upload",
+        files={"file": ("download.mp3", io.BytesIO(file_content), "audio/mpeg")},
+        data={"title": "Download Song", "artist": "Test Artist"},
+    )
+    song_id = create_resp.json()["id"]
+    response = client.get(f"/api/songs/{song_id}/download")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "audio/mpeg"
+    assert "attachment" in response.headers.get("content-disposition", "")
+
+
+def test_download_song_not_found(client: TestClient):
+    response = client.get("/api/songs/999/download")
+    assert response.status_code == 404
+
+
 def test_stream_song_range(client: TestClient):
     file_content = b"fake audio content for range streaming test"
     upload_resp = client.post(
@@ -120,3 +139,35 @@ def test_stream_song_range(client: TestClient):
     assert resp.status_code == 206
     assert "content-range" in resp.headers
     assert resp.headers["content-range"].startswith("bytes 0-9/")
+
+
+def test_batch_upload(client):
+    files = [
+        ("files", ("song1.mp3", io.BytesIO(b"audio1"), "audio/mpeg")),
+        ("files", ("song2.mp3", io.BytesIO(b"audio2"), "audio/mpeg")),
+    ]
+    response = client.post("/api/songs/batch-upload", files=files)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["uploaded"] == 2
+    assert len(data["results"]) == 2
+
+
+def test_scan_directory(client, tmp_path):
+    # Create test music files
+    (tmp_path / "song1.mp3").write_bytes(b"audio1")
+    (tmp_path / "song2.flac").write_bytes(b"audio2")
+    (tmp_path / "not_music.txt").write_bytes(b"text")
+    (tmp_path / "SubDir").mkdir()
+    (tmp_path / "SubDir" / "Artist - Title.mp3").write_bytes(b"audio3")
+
+    response = client.post("/api/songs/scan-directory", data={"directory": str(tmp_path)})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["imported"] == 3  # 3 music files
+    assert data["total_found"] == 3
+
+
+def test_auto_tag_not_found(client):
+    response = client.post("/api/songs/999/auto-tag")
+    assert response.status_code == 404

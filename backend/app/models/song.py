@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime
 from app.database import Base
 
@@ -15,4 +15,4 @@ class Song(Base):
     cover_url = Column(String)
     source = Column(String, default="local")
     source_id = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

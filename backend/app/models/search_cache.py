@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime
 from app.database import Base
 
@@ -9,4 +9,4 @@ class SearchCache(Base):
     id = Column(Integer, primary_key=True, index=True)
     keyword = Column(String, nullable=False, index=True)
     results = Column(String)  # JSON string
-    cached_at = Column(DateTime, default=datetime.utcnow)
+    cached_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

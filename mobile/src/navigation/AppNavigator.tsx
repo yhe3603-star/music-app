@@ -16,7 +16,7 @@ function TabNavigator() {
     <Tab.Navigator>
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: '首页' }} />
       <Tab.Screen name="Search" component={SearchScreen} options={{ title: '搜索' }} />
-      <Tab.Screen name="Library" component={LibraryScreen} options={{ title: '音乐库' }} />
+      <Tab.Screen name="Library" component={LibraryScreen} options={{ title: '管理' }} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} options={{ title: '收藏' }} />
       <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: '设置' }} />
     </Tab.Navigator>

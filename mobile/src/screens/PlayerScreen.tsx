@@ -5,6 +5,8 @@ import { usePlayerStore } from '../stores/playerStore';
 import { usePlaylistStore } from '../stores/playlistStore';
 import { playSong, pausePlayback, resumePlayback, seekTo, useProgress } from '../services/audioService';
 import LyricsView from '../components/LyricsView';
+import { Colors, Typography, Spacing, Radius } from '../theme/colors';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function PlayerScreen() {
   const {
@@ -73,6 +75,8 @@ export default function PlayerScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.bgAccent} />
+
       <View style={styles.coverSection}>
         <View style={styles.cover}>
           {currentSong.cover_url ? (
@@ -95,6 +99,7 @@ export default function PlayerScreen() {
       </View>
 
       <TouchableOpacity
+        activeOpacity={0.7}
         style={styles.progressSection}
         onLayout={onProgressLayout}
         onPress={handleSeek}
@@ -109,20 +114,20 @@ export default function PlayerScreen() {
       </TouchableOpacity>
 
       <View style={styles.controls}>
-        <TouchableOpacity onPress={() => toggleFavorite(currentSong.id)}>
-          <Text style={styles.controlBtn}>{favorite ? '❤️' : '🤍'}</Text>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => toggleFavorite(currentSong.id)} style={styles.controlBtn}>
+          <Icon name={favorite ? 'heart' : 'heart-outline'} size={24} color={favorite ? Colors.destructive : Colors.textMuted} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handlePrevious}>
-          <Text style={styles.controlBtn}>⏮</Text>
+        <TouchableOpacity activeOpacity={0.7} onPress={handlePrevious} style={styles.controlBtn}>
+          <Icon name="play-skip-back" size={28} color={Colors.foreground} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleTogglePlay} style={styles.playBtn}>
-          <Text style={styles.playBtnText}>{isPlaying ? '⏸' : '▶'}</Text>
+        <TouchableOpacity activeOpacity={0.7} onPress={handleTogglePlay} style={styles.playBtn}>
+          <Icon name={isPlaying ? 'pause' : 'play'} size={30} color={Colors.foreground} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleNext}>
-          <Text style={styles.controlBtn}>⏭</Text>
+        <TouchableOpacity activeOpacity={0.7} onPress={handleNext} style={styles.controlBtn}>
+          <Icon name="play-skip-forward" size={28} color={Colors.foreground} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => {}}>
-          <Text style={styles.controlBtn}>🔀</Text>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => {}} style={styles.controlBtn}>
+          <Icon name="shuffle" size={22} color={Colors.textMuted} />
         </TouchableOpacity>
       </View>
     </View>
@@ -136,31 +141,36 @@ function formatTime(seconds: number): string {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 20 },
-  noSong: { fontSize: 18, color: '#999', textAlign: 'center', marginTop: 100 },
-  coverSection: { alignItems: 'center', marginTop: 20 },
+  container: { flex: 1, backgroundColor: Colors.background },
+  bgAccent: { position: 'absolute', top: 0, left: 0, right: 0, height: 350, backgroundColor: 'rgba(124, 58, 237, 0.06)' },
+  noSong: { ...Typography.body, color: Colors.textDisabled, textAlign: 'center', marginTop: 100 },
+  coverSection: { alignItems: 'center', marginTop: Spacing.xl, paddingHorizontal: Spacing.xl },
   cover: {
-    width: 280, height: 280, borderRadius: 12, backgroundColor: '#e0e0e0',
+    width: 300, height: 300, borderRadius: Radius.lg, backgroundColor: Colors.surfaceMuted,
     justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
+    elevation: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 12,
   },
-  coverImage: { width: 280, height: 280 },
-  coverText: { fontSize: 80, fontWeight: 'bold', color: '#999' },
-  lyricsSection: { flex: 1, marginTop: 20 },
-  infoSection: { alignItems: 'center', marginBottom: 12 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#333' },
-  artist: { fontSize: 15, color: '#999', marginTop: 4 },
-  progressSection: { marginBottom: 16 },
-  progressBar: { height: 4, backgroundColor: '#e0e0e0', borderRadius: 2 },
-  progressFill: { height: 4, backgroundColor: '#1db954', borderRadius: 2 },
+  coverImage: { width: 300, height: 300 },
+  coverText: { fontSize: 80, fontWeight: 'bold', color: Colors.textDisabled },
+  lyricsSection: { flex: 1, marginTop: Spacing.xl, paddingHorizontal: Spacing.lg },
+  infoSection: { alignItems: 'center', paddingHorizontal: Spacing.xl, marginBottom: Spacing.md },
+  title: { ...Typography.title, fontSize: 22, color: Colors.foreground, textAlign: 'center' },
+  artist: { ...Typography.body, color: Colors.textMuted, marginTop: 4, textAlign: 'center' },
+  progressSection: { marginBottom: Spacing.lg, paddingHorizontal: Spacing.xl },
+  progressBar: { height: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 },
+  progressFill: { height: 4, backgroundColor: Colors.primary, borderRadius: 2 },
   timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  time: { fontSize: 12, color: '#999' },
+  time: { ...Typography.small },
   controls: {
-    flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingBottom: 20,
+    flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
+    paddingBottom: 36, paddingHorizontal: Spacing.xl,
   },
-  controlBtn: { fontSize: 24, padding: 10 },
+  controlBtn: { padding: Spacing.lg },
   playBtn: {
-    width: 60, height: 60, borderRadius: 30, backgroundColor: '#1db954',
+    width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.primary,
     justifyContent: 'center', alignItems: 'center',
+    elevation: 6, shadowColor: Colors.primary, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8,
   },
-  playBtnText: { fontSize: 28, color: '#fff' },
 });

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MusicApi } from '../services/api';
 import { usePlayerStore } from '../stores/playerStore';
@@ -7,6 +7,8 @@ import { usePlaylistStore } from '../stores/playlistStore';
 import SongItem from '../components/SongItem';
 import MiniPlayer from '../components/MiniPlayer';
 import { Song } from '../types';
+import { Colors, Typography, Spacing } from '../theme/colors';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function FavoritesScreen() {
   const navigation = useNavigation<any>();
@@ -52,9 +54,10 @@ export default function FavoritesScreen() {
     <View style={styles.container}>
       <Text style={styles.header}>收藏</Text>
       {loading ? (
-        <Text style={styles.loading}>加载中...</Text>
+        <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
       ) : songs.length === 0 ? (
         <View style={styles.empty}>
+          <Icon name="heart-outline" size={64} color={Colors.textDisabled} />
           <Text style={styles.emptyText}>还没有收藏的歌曲</Text>
           <Text style={styles.emptyHint}>在播放页面点击爱心收藏</Text>
         </View>
@@ -62,6 +65,7 @@ export default function FavoritesScreen() {
         <FlatList
           data={songs}
           keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={{ paddingBottom: 100 }}
           renderItem={({ item }) => (
             <SongItem song={item} onPress={handleSongPress} isPlaying={currentSong?.id === item.id} />
           )}
@@ -73,10 +77,9 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { fontSize: 28, fontWeight: 'bold', padding: 16, paddingBottom: 8 },
-  loading: { textAlign: 'center', marginTop: 40, color: '#999' },
+  container: { flex: 1, backgroundColor: Colors.background },
+  header: { ...Typography.display, padding: Spacing.lg, paddingBottom: Spacing.sm, paddingTop: 56 },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: 18, color: '#666' },
-  emptyHint: { fontSize: 14, color: '#999', marginTop: 8 },
+  emptyText: { ...Typography.title, color: Colors.textMuted, marginTop: Spacing.md },
+  emptyHint: { ...Typography.body, color: Colors.textDisabled, marginTop: Spacing.sm },
 });

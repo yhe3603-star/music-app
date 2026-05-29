@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, Text, Alert, StyleSheet } from 'react-native';
+import { TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { DownloadService } from '../services/downloadService';
 import { MusicApi } from '../services/api';
 import { Song } from '../types';
+import { Colors } from '../theme/colors';
 
 interface Props {
   song: Song;
@@ -50,16 +52,18 @@ export default function DownloadButton({ song }: Props) {
   }
 
   return (
-    <TouchableOpacity onPress={handlePress} style={styles.button}>
-      <Text style={[styles.text, downloaded && styles.downloaded]}>
-        {downloading ? '⏳' : downloaded ? '✅' : '⬇️'}
-      </Text>
+    <TouchableOpacity onPress={handlePress} style={styles.button} activeOpacity={0.7}>
+      {downloading ? (
+        <ActivityIndicator size="small" color={Colors.primary} />
+      ) : downloaded ? (
+        <Icon name="checkmark-circle" size={20} color={Colors.accent} />
+      ) : (
+        <Icon name="download-outline" size={20} color={Colors.textMuted} />
+      )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   button: { padding: 8 },
-  text: { fontSize: 18 },
-  downloaded: { opacity: 0.6 },
 });

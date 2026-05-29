@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { Colors, Typography } from '../theme/colors';
 
 interface Props {
   lyrics: string | null;
@@ -83,8 +84,11 @@ export default function LyricsView({ lyrics, currentTime = 0 }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingVertical: 40, alignItems: 'center' },
-  noLyrics: { fontSize: 16, color: '#999', textAlign: 'center', marginTop: 40 },
-  lyricText: { fontSize: 16, color: '#666', textAlign: 'center', lineHeight: 28 },
-  lyricLine: { fontSize: 16, color: '#999', textAlign: 'center', lineHeight: 32 },
-  activeLyric: { fontSize: 18, color: '#333', fontWeight: 'bold' },
+  noLyrics: { ...Typography.body, color: Colors.textMuted, textAlign: 'center', marginTop: 40 },
+  lyricText: { ...Typography.body, color: Colors.textMuted, textAlign: 'center', lineHeight: 28 },
+  lyricLine: { fontSize: 16, color: Colors.textDisabled, textAlign: 'center', lineHeight: 32 },
+  activeLyric: {
+    fontSize: 20, color: Colors.foreground, fontWeight: 'bold',
+    textShadowColor: Colors.primary, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8,
+  },
 });

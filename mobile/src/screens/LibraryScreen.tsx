@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert } 
 import { MusicApi } from '../services/api';
 import { usePlaylistStore } from '../stores/playlistStore';
 import MiniPlayer from '../components/MiniPlayer';
+import { Colors, Typography, Spacing, Radius } from '../theme/colors';
 
 export default function LibraryScreen() {
   const [playlistName, setPlaylistName] = useState('');
@@ -41,8 +42,9 @@ export default function LibraryScreen() {
             value={playlistName}
             onChangeText={setPlaylistName}
             placeholder="播放列表名称"
+            placeholderTextColor={Colors.textDisabled}
           />
-          <TouchableOpacity style={styles.createBtn} onPress={handleCreatePlaylist}>
+          <TouchableOpacity activeOpacity={0.7} style={styles.createBtn} onPress={handleCreatePlaylist}>
             <Text style={styles.createBtnText}>创建</Text>
           </TouchableOpacity>
         </View>
@@ -53,6 +55,7 @@ export default function LibraryScreen() {
           <FlatList
             data={playlists}
             keyExtractor={(item) => String(item.id)}
+            contentContainerStyle={{ paddingBottom: 100 }}
             renderItem={({ item }) => (
               <View style={styles.playlistItem}>
                 <Text style={styles.playlistName}>{item.name}</Text>
@@ -70,23 +73,24 @@ export default function LibraryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { fontSize: 28, fontWeight: 'bold', padding: 16, paddingBottom: 8 },
-  section: { padding: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12, color: '#333' },
-  createRow: { flexDirection: 'row', gap: 8 },
+  container: { flex: 1, backgroundColor: Colors.background },
+  header: { ...Typography.display, padding: Spacing.lg, paddingBottom: Spacing.sm, paddingTop: 56 },
+  section: { padding: Spacing.lg },
+  sectionTitle: { ...Typography.title, marginBottom: Spacing.md, color: Colors.foreground },
+  createRow: { flexDirection: 'row', gap: Spacing.sm },
   input: {
-    flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8,
-    padding: 12, fontSize: 16,
+    flex: 1, borderWidth: 1, borderColor: Colors.border, color: Colors.foreground,
+    backgroundColor: Colors.surface, borderRadius: Radius.sm,
+    padding: Spacing.md, fontSize: 16,
   },
   createBtn: {
-    backgroundColor: '#1db954', borderRadius: 8, paddingHorizontal: 20,
+    backgroundColor: Colors.primary, borderRadius: Radius.sm, paddingHorizontal: Spacing.xl,
     justifyContent: 'center',
   },
-  createBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  createBtnText: { color: Colors.foreground, fontSize: 16, fontWeight: '600' },
   playlistItem: {
-    paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#eee',
+    paddingVertical: Spacing.md, borderBottomWidth: 0.5, borderBottomColor: Colors.border,
   },
-  playlistName: { fontSize: 16, color: '#333' },
-  playlistDesc: { fontSize: 13, color: '#999', marginTop: 2 },
+  playlistName: { fontSize: 16, color: Colors.foreground },
+  playlistDesc: { ...Typography.caption, color: Colors.textMuted, marginTop: 2 },
 });

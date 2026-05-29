@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Playlist } from '../types';
+import { Colors, Typography, Radius } from '../theme/colors';
 
 interface Props {
   playlist: Playlist;
@@ -9,7 +10,7 @@ interface Props {
 
 export default function PlaylistCard({ playlist, onPress }: Props) {
   return (
-    <TouchableOpacity style={styles.container} onPress={() => onPress(playlist)}>
+    <TouchableOpacity style={styles.container} onPress={() => onPress(playlist)} activeOpacity={0.7}>
       <View style={styles.cover}>
         <Text style={styles.coverText}>
           {(playlist.name || '?')[0].toUpperCase()}
@@ -23,9 +24,10 @@ export default function PlaylistCard({ playlist, onPress }: Props) {
 const styles = StyleSheet.create({
   container: { width: 140, marginRight: 12 },
   cover: {
-    width: 140, height: 140, borderRadius: 8, backgroundColor: '#e0e0e0',
+    width: 140, height: 140, borderRadius: Radius.lg, backgroundColor: Colors.surfaceMuted,
+    borderWidth: 1, borderColor: Colors.border,
     justifyContent: 'center', alignItems: 'center',
   },
-  coverText: { fontSize: 40, fontWeight: 'bold', color: '#999' },
-  name: { fontSize: 14, marginTop: 6, color: '#333' },
+  coverText: { fontSize: 40, fontWeight: 'bold', color: Colors.primary },
+  name: { fontSize: 14, marginTop: 6, color: Colors.foreground },
 });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MusicApi } from '../services/api';
 import { usePlayerStore } from '../stores/playerStore';
@@ -8,6 +8,8 @@ import SearchBar from '../components/SearchBar';
 import SongItem from '../components/SongItem';
 import MiniPlayer from '../components/MiniPlayer';
 import { SearchResult, Song } from '../types';
+import { Colors, Typography, Spacing } from '../theme/colors';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function SearchScreen() {
   const navigation = useNavigation<any>();
@@ -50,11 +52,12 @@ export default function SearchScreen() {
         onClear={() => { setKeyword(''); setResults([]); }}
       />
       {loading ? (
-        <Text style={styles.loading}>搜索中...</Text>
+        <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
       ) : results.length > 0 ? (
         <FlatList
           data={results}
           keyExtractor={(item, index) => `${item.source}-${item.source_id}-${index}`}
+          contentContainerStyle={{ paddingBottom: 100 }}
           renderItem={({ item }) => (
             <SongItem
               song={{
@@ -72,22 +75,25 @@ export default function SearchScreen() {
         <View style={styles.historySection}>
           <View style={styles.historyHeader}>
             <Text style={styles.historyTitle}>搜索历史</Text>
-            <TouchableOpacity onPress={clearHistory}>
+            <TouchableOpacity activeOpacity={0.7} onPress={clearHistory}>
               <Text style={styles.clearBtn}>清空</Text>
             </TouchableOpacity>
           </View>
           {history.map((item, index) => (
             <TouchableOpacity
               key={index}
+              activeOpacity={0.7}
               onPress={() => { setKeyword(item); handleSearch(); }}
               style={styles.historyItem}
             >
+              <Icon name="time-outline" size={16} color={Colors.textDisabled} style={{ marginRight: 8 }} />
               <Text style={styles.historyText}>{item}</Text>
             </TouchableOpacity>
           ))}
         </View>
       ) : (
         <View style={styles.empty}>
+          <Icon name="search-outline" size={48} color={Colors.textDisabled} />
           <Text style={styles.emptyText}>搜索你想听的歌曲</Text>
         </View>
       )}
@@ -97,14 +103,13 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  loading: { textAlign: 'center', marginTop: 20, color: '#999' },
+  container: { flex: 1, backgroundColor: Colors.background },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: 16, color: '#999' },
-  historySection: { padding: 16 },
-  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  historyTitle: { fontSize: 16, fontWeight: '600', color: '#333' },
-  clearBtn: { fontSize: 14, color: '#999' },
-  historyItem: { paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: '#eee' },
-  historyText: { fontSize: 15, color: '#666' },
+  emptyText: { ...Typography.title, color: Colors.textMuted },
+  historySection: { padding: Spacing.lg },
+  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.md },
+  historyTitle: { ...Typography.title, color: Colors.foreground },
+  clearBtn: { ...Typography.caption, color: Colors.destructive },
+  historyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: Colors.border },
+  historyText: { color: Colors.textMuted, marginLeft: 8 },
 });

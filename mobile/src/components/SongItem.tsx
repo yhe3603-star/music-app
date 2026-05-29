@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Song } from '../types';
+import { Colors, Typography, Radius } from '../theme/colors';
 import DownloadButton from './DownloadButton';
 
 interface Props {
@@ -13,9 +14,10 @@ interface Props {
 export default function SongItem({ song, onPress, onLongPress, isPlaying }: Props) {
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, isPlaying && styles.containerPlaying]}
       onPress={() => onPress(song)}
       onLongPress={() => onLongPress?.(song)}
+      activeOpacity={0.7}
     >
       <View style={styles.cover}>
         <Text style={styles.coverText}>
@@ -46,15 +48,24 @@ function formatDuration(ms: number): string {
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', padding: 12 },
+  container: {
+    flexDirection: 'row', alignItems: 'center', padding: 12,
+    marginHorizontal: 16, marginVertical: 4,
+    backgroundColor: Colors.surface, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  containerPlaying: {
+    borderColor: Colors.primary,
+    backgroundColor: 'rgba(124, 58, 237, 0.08)',
+  },
   cover: {
-    width: 48, height: 48, borderRadius: 4, backgroundColor: '#e0e0e0',
+    width: 48, height: 48, borderRadius: Radius.sm, backgroundColor: Colors.surfaceMuted,
     justifyContent: 'center', alignItems: 'center',
   },
-  coverText: { fontSize: 20, fontWeight: 'bold', color: '#666' },
+  coverText: { fontSize: 20, fontWeight: 'bold', color: Colors.textMuted },
   info: { flex: 1, marginLeft: 12 },
-  title: { fontSize: 16, color: '#333' },
-  playing: { color: '#1db954' },
-  artist: { fontSize: 13, color: '#999', marginTop: 2 },
-  duration: { fontSize: 13, color: '#999', marginLeft: 8 },
+  title: { fontSize: 16, color: Colors.foreground },
+  playing: { color: Colors.primary },
+  artist: { ...Typography.caption, marginTop: 2 },
+  duration: { ...Typography.small, marginLeft: 8 },
 });

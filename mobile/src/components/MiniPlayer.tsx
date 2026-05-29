@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { usePlayerStore } from '../stores/playerStore';
 import { pausePlayback, resumePlayback } from '../services/audioService';
+import { Colors, Typography, Spacing, Radius } from '../theme/colors';
 
 export default function MiniPlayer() {
   const { currentSong, isPlaying, togglePlay } = usePlayerStore();
@@ -19,9 +21,13 @@ export default function MiniPlayer() {
   return (
     <View style={styles.container}>
       <View style={styles.cover}>
-        <Text style={styles.coverText}>
-          {(currentSong.title || '?')[0].toUpperCase()}
-        </Text>
+        {currentSong.cover_url ? (
+          <Image source={{ uri: currentSong.cover_url }} style={StyleSheet.absoluteFill} />
+        ) : (
+          <Text style={styles.coverText}>
+            {(currentSong.title || '?')[0].toUpperCase()}
+          </Text>
+        )}
       </View>
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>{currentSong.title}</Text>
@@ -29,8 +35,8 @@ export default function MiniPlayer() {
           {currentSong.artist || '未知歌手'}
         </Text>
       </View>
-      <TouchableOpacity onPress={handleTogglePlay} style={styles.button}>
-        <Text style={styles.buttonText}>{isPlaying ? '⏸' : '▶'}</Text>
+      <TouchableOpacity onPress={handleTogglePlay} style={styles.button} activeOpacity={0.7}>
+        <Icon name={isPlaying ? 'pause' : 'play'} size={22} color={Colors.foreground} />
       </TouchableOpacity>
     </View>
   );
@@ -38,17 +44,18 @@ export default function MiniPlayer() {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row', alignItems: 'center', padding: 8,
-    backgroundColor: '#f8f8f8', borderTopWidth: 1, borderTopColor: '#eee',
+    flexDirection: 'row', alignItems: 'center', padding: 10,
+    marginHorizontal: 16, marginBottom: 8,
+    backgroundColor: Colors.surfaceGlass, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: Colors.borderLight,
   },
   cover: {
-    width: 40, height: 40, borderRadius: 4, backgroundColor: '#e0e0e0',
-    justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: Radius.sm, backgroundColor: Colors.surfaceMuted,
+    justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
   },
-  coverText: { fontSize: 16, fontWeight: 'bold', color: '#666' },
+  coverText: { fontSize: 16, fontWeight: 'bold', color: Colors.textMuted },
   info: { flex: 1, marginLeft: 10 },
-  title: { fontSize: 14, fontWeight: '600', color: '#333' },
-  artist: { fontSize: 12, color: '#999' },
+  title: { fontSize: 14, fontWeight: '600', color: Colors.foreground },
+  artist: { ...Typography.small },
   button: { padding: 10 },
-  buttonText: { fontSize: 20 },
 });

@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { Colors, Radius } from '../theme/colors';
 
 interface Props {
   value: string;
@@ -12,19 +14,21 @@ interface Props {
 export default function SearchBar({ value, onChangeText, onSubmit, onClear, placeholder }: Props) {
   return (
     <View style={styles.container}>
+      <Icon name="search" size={20} color={Colors.textMuted} />
       <TextInput
         style={styles.input}
         value={value}
         onChangeText={onChangeText}
         onSubmitEditing={onSubmit}
         placeholder={placeholder || '搜索歌曲、歌手...'}
+        placeholderTextColor={Colors.textDisabled}
         returnKeyType="search"
         autoCapitalize="none"
         autoCorrect={false}
       />
       {value.length > 0 && (
         <TouchableOpacity onPress={onClear} style={styles.clearBtn}>
-          <Text style={styles.clearText}>✕</Text>
+          <Icon name="close-circle" size={20} color={Colors.textMuted} />
         </TouchableOpacity>
       )}
     </View>
@@ -34,9 +38,10 @@ export default function SearchBar({ value, onChangeText, onSubmit, onClear, plac
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#f0f0f0', borderRadius: 8, margin: 12, paddingHorizontal: 12,
+    backgroundColor: Colors.surface, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: Colors.border,
+    margin: 12, paddingHorizontal: 12,
   },
-  input: { flex: 1, height: 40, fontSize: 16, color: '#333' },
+  input: { flex: 1, height: 44, fontSize: 16, color: Colors.foreground, marginLeft: 8 },
   clearBtn: { padding: 6 },
-  clearText: { fontSize: 16, color: '#999' },
 });

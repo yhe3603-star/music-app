@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MusicApi } from '../services/api';
 import { usePlayerStore } from '../stores/playerStore';
@@ -8,6 +8,8 @@ import SongItem from '../components/SongItem';
 import PlaylistCard from '../components/PlaylistCard';
 import MiniPlayer from '../components/MiniPlayer';
 import { Song } from '../types';
+import { Colors, Typography, Spacing } from '../theme/colors';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -43,9 +45,10 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <Text style={styles.header}>音乐库</Text>
       {loading ? (
-        <Text style={styles.loading}>加载中...</Text>
+        <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
       ) : songs.length === 0 ? (
         <View style={styles.empty}>
+          <Icon name="musical-notes-outline" size={48} color={Colors.textDisabled} />
           <Text style={styles.emptyText}>还没有歌曲</Text>
           <Text style={styles.emptyHint}>去音乐库上传歌曲吧</Text>
         </View>
@@ -53,6 +56,7 @@ export default function HomeScreen() {
         <FlatList
           data={songs}
           keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={{ paddingBottom: 100 }}
           ListHeaderComponent={
             playlists.length > 0 ? (
               <View style={styles.section}>
@@ -80,12 +84,11 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { fontSize: 28, fontWeight: 'bold', padding: 16, paddingBottom: 8 },
-  section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', paddingHorizontal: 16, paddingVertical: 8 },
-  loading: { textAlign: 'center', marginTop: 40, color: '#999' },
+  container: { flex: 1, backgroundColor: Colors.background },
+  header: { ...Typography.display, padding: Spacing.lg, paddingBottom: Spacing.sm, paddingTop: 56 },
+  section: { marginBottom: Spacing.lg },
+  sectionTitle: { ...Typography.title, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: 18, color: '#666' },
-  emptyHint: { fontSize: 14, color: '#999', marginTop: 8 },
+  emptyText: { ...Typography.title, color: Colors.textMuted },
+  emptyHint: { ...Typography.body, color: Colors.textDisabled, marginTop: Spacing.sm },
 });

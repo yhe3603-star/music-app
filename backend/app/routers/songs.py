@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, R
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Optional
+from pathlib import Path
 
 from app.database import get_db
 from app.models.song import Song
-from app.models.lyrics import Lyrics
-from app.services.music_service import MusicService
+from app.services.music_service import MusicService, get_mime_type
+from app.services.tag_service import TagService
 from app.schemas.song import SongCreate, SongResponse, SongListResponse
 
 router = APIRouter(prefix="/api/songs", tags=["songs"])
@@ -63,7 +64,7 @@ def stream_song(song_id: int, request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Audio file not found")
 
     file_size = file_path.stat().st_size
-    content_type = "audio/mpeg"
+    content_type = get_mime_type(file_path)
 
     range_header = request.headers.get("range")
     if range_header:
@@ -73,7 +74,7 @@ def stream_song(song_id: int, request: Request, db: Session = Depends(get_db)):
             start = int(start_str)
             end = int(end_str) if end_str else file_size - 1
 
-            if start >= file_size or start > end or start < 0:
+            if start >= file_size or start > end or start < 0 or end >= file_size:
                 raise HTTPException(status_code=416, detail="Range not satisfiable")
         except (ValueError, IndexError):
             raise HTTPException(status_code=416, detail="Invalid Range header")
@@ -114,12 +115,11 @@ def download_song(song_id: int, db: Session = Depends(get_db)):
 
     song = service.get_song(song_id)
     filename = f"{song.artist} - {song.title}{file_path.suffix}" if song.artist else f"{song.title}{file_path.suffix}"
-    # Sanitize filename for Content-Disposition
     filename = filename.replace("/", "_").replace("\\", "_")
 
     return FileResponse(
         file_path,
-        media_type="audio/mpeg",
+        media_type=get_mime_type(file_path),
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
@@ -154,37 +154,41 @@ async def scan_directory(
     directory: str = Form(...),
     db: Session = Depends(get_db),
 ):
-    from pathlib import Path
+    from app.config import settings
 
-    dir_path = Path(directory)
+    dir_path = Path(directory).resolve()
+    storage_root = settings.storage_path.resolve()
+
+    if not str(dir_path).startswith(str(storage_root)):
+        raise HTTPException(
+            status_code=403,
+            detail="Directory must be within the storage path",
+        )
+
     if not dir_path.exists() or not dir_path.is_dir():
         raise HTTPException(status_code=400, detail="Directory not found")
 
-    music_extensions = {'.mp3', '.flac', '.wav', '.m4a', '.ogg', '.wma', '.aac'}
+    music_extensions = {'.mp3', '.flac', '.wav', '.m4a', '.ogg', '.wma', '.aac', '.opus'}
     service = MusicService(db)
     results = []
 
     for file_path in sorted(dir_path.rglob("*")):
         if file_path.suffix.lower() in music_extensions:
-            # Check if already imported
             existing = db.query(Song).filter(Song.file_path == str(file_path)).first()
             if existing:
                 results.append({"file": str(file_path), "status": "skipped", "reason": "already imported"})
                 continue
 
             try:
-                # Try to extract metadata from filename
                 title = file_path.stem
                 artist = None
                 album = None
 
-                # Try "Artist - Title" format
                 if " - " in title:
                     parts = title.split(" - ", 1)
                     artist = parts[0].strip()
                     title = parts[1].strip()
 
-                # Try to get parent folder as album
                 if file_path.parent.name != dir_path.name:
                     album = file_path.parent.name
 
@@ -212,105 +216,14 @@ async def scan_directory(
 
 @router.post("/{song_id}/auto-tag")
 async def auto_tag_song(song_id: int, db: Session = Depends(get_db)):
-    service = MusicService(db)
-    song = service.get_song(song_id)
-    if not song:
+    service = TagService(db)
+    result = await service.auto_tag_song(song_id)
+    if result is None:
         raise HTTPException(status_code=404, detail="Song not found")
-
-    updated_fields = []
-
-    # Search for metadata online
-    try:
-        from app.scrapers.search_scraper import SearchScraper
-        scraper = SearchScraper()
-        query = f"{song.title} {song.artist}" if song.artist else song.title
-        results = await scraper.search(query)
-
-        if results:
-            best = results[0]
-            if best.get("title") and not song.title:
-                song.title = best["title"]
-                updated_fields.append("title")
-            if best.get("artist") and not song.artist:
-                song.artist = best["artist"]
-                updated_fields.append("artist")
-            if best.get("album") and not song.album:
-                song.album = best["album"]
-                updated_fields.append("album")
-            if best.get("duration") and not song.duration:
-                song.duration = best["duration"]
-                updated_fields.append("duration")
-            if best.get("cover_url") and not song.cover_url:
-                song.cover_url = best["cover_url"]
-                updated_fields.append("cover_url")
-    except Exception:
-        pass
-
-    # Fetch lyrics
-    try:
-        from app.scrapers.lyrics_scraper import LyricsScraper
-
-        existing_lyrics = db.query(Lyrics).filter(Lyrics.song_id == song_id).first()
-        if not existing_lyrics:
-            lyrics_scraper = LyricsScraper()
-            lyrics_results = await lyrics_scraper.search_lyrics(song.title, song.artist)
-            if lyrics_results:
-                lyrics = Lyrics(
-                    song_id=song_id,
-                    content=lyrics_results[0].get("content", ""),
-                    source=lyrics_results[0].get("source", "lrclib"),
-                )
-                db.add(lyrics)
-                updated_fields.append("lyrics")
-    except Exception:
-        pass
-
-    db.commit()
-    db.refresh(song)
-
-    return {
-        "song_id": song_id,
-        "updated_fields": updated_fields,
-        "message": f"Updated {len(updated_fields)} fields" if updated_fields else "No updates needed",
-    }
+    return result
 
 
 @router.post("/batch-auto-tag")
 async def batch_auto_tag(db: Session = Depends(get_db)):
-    service = MusicService(db)
-    songs = db.query(Song).limit(50).all()
-    results = []
-
-    for song in songs:
-        try:
-            updated_fields = []
-
-            from app.scrapers.search_scraper import SearchScraper
-            from app.scrapers.lyrics_scraper import LyricsScraper
-
-            if not song.cover_url:
-                scraper = SearchScraper()
-                query = f"{song.title} {song.artist}" if song.artist else song.title
-                search_results = await scraper.search(query)
-                if search_results and search_results[0].get("cover_url"):
-                    song.cover_url = search_results[0]["cover_url"]
-                    updated_fields.append("cover_url")
-
-            existing_lyrics = db.query(Lyrics).filter(Lyrics.song_id == song.id).first()
-            if not existing_lyrics:
-                lyrics_scraper = LyricsScraper()
-                lyrics_results = await lyrics_scraper.search_lyrics(song.title, song.artist)
-                if lyrics_results:
-                    db.add(Lyrics(
-                        song_id=song.id,
-                        content=lyrics_results[0].get("content", ""),
-                        source=lyrics_results[0].get("source", "lrclib"),
-                    ))
-                    updated_fields.append("lyrics")
-
-            results.append({"song_id": song.id, "title": song.title, "updated": updated_fields})
-        except Exception as e:
-            results.append({"song_id": song.id, "title": song.title, "error": str(e)})
-
-    db.commit()
-    return {"processed": len(results), "results": results}
+    service = TagService(db)
+    return await service.batch_auto_tag()

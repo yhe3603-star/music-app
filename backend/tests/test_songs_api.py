@@ -154,6 +154,9 @@ def test_batch_upload(client):
 
 
 def test_scan_directory(client, tmp_path):
+    from app.config import settings
+    settings.storage_path = tmp_path
+
     # Create test music files
     (tmp_path / "song1.mp3").write_bytes(b"audio1")
     (tmp_path / "song2.flac").write_bytes(b"audio2")
@@ -171,3 +174,45 @@ def test_scan_directory(client, tmp_path):
 def test_auto_tag_not_found(client):
     response = client.post("/api/songs/999/auto-tag")
     assert response.status_code == 404
+
+
+def test_stream_song_range_out_of_bounds(client: TestClient):
+    file_content = b"short"
+    upload_resp = client.post(
+        "/api/songs/upload",
+        files={"file": ("short.mp3", io.BytesIO(file_content), "audio/mpeg")},
+    )
+    song_id = upload_resp.json()["id"]
+    resp = client.get(
+        f"/api/songs/{song_id}/stream",
+        headers={"Range": "bytes=0-999"},
+    )
+    assert resp.status_code == 416
+
+
+def test_stream_song_invalid_range(client: TestClient):
+    file_content = b"audio data here"
+    upload_resp = client.post(
+        "/api/songs/upload",
+        files={"file": ("test.mp3", io.BytesIO(file_content), "audio/mpeg")},
+    )
+    song_id = upload_resp.json()["id"]
+    resp = client.get(
+        f"/api/songs/{song_id}/stream",
+        headers={"Range": "invalid"},
+    )
+    assert resp.status_code == 416
+
+
+def test_upload_rejects_unsupported_type(client: TestClient):
+    resp = client.post(
+        "/api/songs/upload",
+        files={"file": ("malware.exe", io.BytesIO(b"MZ..."), "application/octet-stream")},
+    )
+    assert resp.status_code == 400
+    assert "Unsupported file type" in resp.json()["detail"]
+
+
+def test_scan_directory_rejects_outside_storage(client: TestClient):
+    response = client.post("/api/songs/scan-directory", data={"directory": "/etc"})
+    assert response.status_code == 403

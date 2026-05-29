@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MusicApi } from '../services/api';
 import { usePlayerStore } from '../stores/playerStore';
 import { usePlaylistStore } from '../stores/playlistStore';
@@ -15,7 +15,11 @@ export default function FavoritesScreen() {
   const { currentSong, setCurrentSong } = usePlayerStore();
   const { favorites } = usePlaylistStore();
 
-  useEffect(() => { loadFavorites(); }, [favorites]);
+  useFocusEffect(
+    useCallback(() => {
+      loadFavorites();
+    }, [favorites])
+  );
 
   async function loadFavorites() {
     if (favorites.length === 0) {
@@ -23,17 +27,15 @@ export default function FavoritesScreen() {
       setLoading(false);
       return;
     }
+    setLoading(true);
     try {
-      const allSongs: Song[] = [];
-      for (const id of favorites) {
-        try {
-          const song = await MusicApi.getSong(id);
-          allSongs.push(song);
-        } catch {
-          // skip missing songs
-        }
-      }
-      setSongs(allSongs);
+      const results = await Promise.allSettled(
+        favorites.map((id) => MusicApi.getSong(id))
+      );
+      const loaded = results
+        .filter((r): r is PromiseFulfilledResult<Song> => r.status === 'fulfilled')
+        .map((r) => r.value);
+      setSongs(loaded);
     } catch (err) {
       console.warn('Failed to load favorites:', err);
     } finally {

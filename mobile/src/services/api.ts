@@ -22,6 +22,14 @@ async function post<T>(path: string, body: any): Promise<T> {
   return response.json();
 }
 
+async function del<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, { method: 'DELETE' });
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+  return response.json();
+}
+
 export const MusicApi = {
   getSongs(page = 1, pageSize = 20, search?: string): Promise<SongListResponse> {
     const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
@@ -54,7 +62,7 @@ export const MusicApi = {
   },
 
   removeSongFromPlaylist(playlistId: number, songId: number): Promise<void> {
-    return request(`/api/playlists/${playlistId}/songs/${songId}`);
+    return del(`/api/playlists/${playlistId}/songs/${songId}`);
   },
 
   getLyrics(songId: number): Promise<Lyrics> {
